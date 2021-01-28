@@ -14,7 +14,7 @@ job "${job_name}" {
   #
   # For more information, please see the online documentation at:
   #
-  #     https://www.nomadproject.io/docs/jobspec/schedulers.html
+  #     https://www.nomadproject.io/docs/jobspec/schedulers
   #
   type        = "service"
 
@@ -78,19 +78,29 @@ job "${job_name}" {
   # For more information and examples on the "group" stanza, please see
   # the online documentation at:
   #
-  #     https://www.nomadproject.io/docs/job-specification/group.html
+  #     https://www.nomadproject.io/docs/job-specification/group
   #
-  group "prod-group1-elastic-cluster" {
+  group "${cluster_service_name}" {
     # The "count" parameter specifies the number of the task groups that should
     # be running under this group. This value must be non-negative and defaults
     # to 1.
     count             = ${group_count}
 
-    ephemeral_disk {
-      size            = "50000"
-      sticky          = true
-      migrate         = false
+    # The volume stanza allows the group to specify that it requires a given
+    # volume from the cluster.
+    #
+    # For more information and examples on the "volume" stanza, please see
+    # the online documentation at:
+    #
+    #     https://www.nomadproject.io/docs/job-specification/volume
+    #
+    %{ if use_host_volume }
+    volume "${cluster_service_name}" {
+      type              = "host"
+      read_only         = false
+      source            = "${host_volume}"
     }
+    %{ endif }
 
     # The "task" stanza creates an individual unit of work, such as a Docker
     # container, web application, or batch processing.
@@ -98,12 +108,26 @@ job "${job_name}" {
     # For more information and examples on the "task" stanza, please see
     # the online documentation at:
     #
-    #     https://www.nomadproject.io/docs/job-specification/task.html
+    #     https://www.nomadproject.io/docs/job-specification/task
     #
-    task "prod-task1-elastic-cluster" {
+    task "${cluster_service_name}" {
       # The "driver" parameter specifies the task driver that should be used to
       # run the task.
       driver          = "docker"
+
+      %{ if use_host_volume }
+      volume_mount {
+        volume          = "${cluster_service_name}"
+        destination     = "${data_dir}"
+        read_only       = false
+      }
+      %{ endif }
+
+      %{ if use_vault_provider }
+      vault {
+        policies        = "${vault_kv_policy_name}"
+      }
+      %{ endif }
 
       kill_timeout    = "600s"
       kill_signal     = "SIGTERM"
@@ -113,7 +137,7 @@ job "${job_name}" {
       # are specific to each driver, so please see specific driver
       # documentation for more information.
       config {
-        image         = "docker.elastic.co/elasticsearch/elasticsearch:${version}"
+        image         = "${cluster_image}"
         dns_servers   = [ "$${attr.unique.network.ip-address}" ]
         command       = "elasticsearch"
         args          = [
@@ -162,9 +186,11 @@ job "${job_name}" {
       # For more information and examples on the "template" stanza, please see
       # the online documentation at:
       #
-      #     https://www.nomadproject.io/docs/job-specification/template.html
+      #     https://www.nomadproject.io/docs/job-specification/template
       #
       template {
+        change_mode     = "noop"
+        change_signal   = "SIGINT"
         data         = <<EOF
 instances:
   - name: 'elastic0'
@@ -174,13 +200,19 @@ instances:
 EOF
         destination  = "secrets/instances.yml"
       }
+
       template {
+        change_mode     = "noop"
+        change_signal   = "SIGINT"
         data         = <<EOF
 elasticuser:$2a$10$kgJDjo1/pBaBsnUHvsGOiOT3IAJhk2TBVNJeTv/1EPg//klcJCK4y
 EOF
         destination  = "secrets/users"
       }
+
       template {
+        change_mode     = "noop"
+        change_signal   = "SIGINT"
         data         = <<EOF
 kibana_admin:elasticuser
 monitoring_user:elasticuser
@@ -188,7 +220,10 @@ superuser:elasticuser
 EOF
         destination  = "secrets/users_roles"
       }
+
       template {
+        change_mode     = "noop"
+        change_signal   = "SIGINT"
         data         = <<EOF
 -----BEGIN CERTIFICATE-----
 MIIDaDCCAlCgAwIBAgIUG3esFYSWamMDpavP3zw/JTA5svswDQYJKoZIhvcNAQEL
@@ -214,7 +249,10 @@ riSs0AsAokMsF+hLv5d1kAH535uHs7Mr85gw7Y7/qlXmJovh4oWcys8XTPvlHhkQ
 EOF
         destination  = "secrets/${cluster_service_name}$${NOMAD_ALLOC_INDEX}.crt"
       }
+
       template {
+        change_mode     = "noop"
+        change_signal   = "SIGINT"
         data         = <<EOF
 -----BEGIN RSA PRIVATE KEY-----
 MIIEpQIBAAKCAQEAtRRlhEZNwbPg2s/u8jNmjmQMF6R99Fi6CoHN8PO021+oE8Qo
@@ -246,7 +284,10 @@ T9/4PLw82sIU9/wFM40F1IV20W1TgUnJZln4HdpWPpwmXottoOX3y2s=
 EOF
         destination  = "secrets/${cluster_service_name}$${NOMAD_ALLOC_INDEX}.key"
       }
+
       template {
+        change_mode     = "noop"
+        change_signal   = "SIGINT"
         data         = <<EOF
 -----BEGIN CERTIFICATE-----
 MIIDSTCCAjGgAwIBAgIUal1tFY90NA8IgvMVUs/jfyG3N00wDQYJKoZIhvcNAQEL
@@ -309,7 +350,7 @@ EOF
       # For more information and examples on the "task" stanza, please see
       # the online documentation at:
       #
-      #     https://www.nomadproject.io/docs/job-specification/service.html
+      #     https://www.nomadproject.io/docs/job-specification/service
       #
       service {
         name              = "${cluster_service_name}"
@@ -357,7 +398,7 @@ EOF
       # For more information and examples on the "resources" stanza, please see
       # the online documentation at:
       #
-      #     https://www.nomadproject.io/docs/job-specification/resources.html
+      #     https://www.nomadproject.io/docs/job-specification/resources
       #
       resources {
         cpu        = ${cluster_cpu}
@@ -372,7 +413,7 @@ EOF
         # For more information and examples on the "template" stanza, please see
         # the online documentation at:
         #
-        #     https://www.nomadproject.io/docs/job-specification/network.html
+        #     https://www.nomadproject.io/docs/job-specification/network
         #
         network {
           port "rest" {
@@ -393,24 +434,13 @@ EOF
   # For more information and examples on the "group" stanza, please see
   # the online documentation at:
   #
-  #     https://www.nomadproject.io/docs/job-specification/group.html
+  #     https://www.nomadproject.io/docs/job-specification/group
   #
-  group "prod-group1-elastic-kibana" {
+  group "${kibana_service_name}" {
     # The "count" parameter specifies the number of the task groups that should
     # be running under this group. This value must be non-negative and defaults
     # to 1.
     count              = 1
-
-    constraint {
-      attribute        = "$${node.unique.name}"
-      value            = "s41-nomad-x86_64"
-    }
-
-    update {
-      max_parallel     = 1
-      health_check     = "checks"
-      min_healthy_time = "10s"
-    }
 
     # The "task" stanza creates an individual unit of work, such as a Docker
     # container, web application, or batch processing.
@@ -418,9 +448,9 @@ EOF
     # For more information and examples on the "task" stanza, please see
     # the online documentation at:
     #
-    #     https://www.nomadproject.io/docs/job-specification/task.html
+    #     https://www.nomadproject.io/docs/job-specification/task
     #
-    task "prod-task1-elastic-kibana" {
+    task "${kibana_service_name}" {
       # The "driver" parameter specifies the task driver that should be used to
       # run the task.
       driver           = "docker"
@@ -433,7 +463,7 @@ EOF
       # are specific to each driver, so please see specific driver
       # documentation for more information.
       config {
-        image         = "docker.elastic.co/kibana/kibana:${version}"
+        image         = "${kibana_image}"
         dns_servers   = [ "$${attr.unique.network.ip-address}" ]
         command       = "kibana"
         args          = [
@@ -472,7 +502,7 @@ EOF
       # For more information and examples on the "template" stanza, please see
       # the online documentation at:
       #
-      #     https://www.nomadproject.io/docs/job-specification/template.html
+      #     https://www.nomadproject.io/docs/job-specification/template
       #
       template {
         data         = <<EOF
@@ -562,23 +592,23 @@ EOF
       # For more information and examples on the "task" stanza, please see
       # the online documentation at:
       #
-      #     https://www.nomadproject.io/docs/job-specification/service.html
+      #     https://www.nomadproject.io/docs/job-specification/service
       #
       service {
         name              = "${kibana_service_name}"
-        port              = "http"
+        port              = "${kibana_service_name}"
         tags              = [ "${kibana_service_name}$${NOMAD_ALLOC_INDEX}" ]
         check {
           name            = "Elastic Kibana Transport Check Live"
-          port            = "http"
+          port            = "${kibana_service_name}"
           type            = "tcp"
           interval        = "5s"
           timeout         = "4s"
         }
         check {
           name            = "Elastic Kibana HTTP Check Live"
+          port            = "${kibana_service_name}"
           type            = "http"
-          port            = "http"
           protocol        = "https"
           method          = "GET"
           tls_skip_verify = true
@@ -595,7 +625,7 @@ EOF
       # For more information and examples on the "resources" stanza, please see
       # the online documentation at:
       #
-      #     https://www.nomadproject.io/docs/job-specification/resources.html
+      #     https://www.nomadproject.io/docs/job-specification/resources
       #
       resources {
         cpu           = ${kibana_cpu}
@@ -610,10 +640,10 @@ EOF
         # For more information and examples on the "template" stanza, please see
         # the online documentation at:
         #
-        #     https://www.nomadproject.io/docs/job-specification/network.html
+        #     https://www.nomadproject.io/docs/job-specification/network
         #
         network {
-          port "http" {
+          port "${kibana_service_name}" {
             static    = ${kibana_port}
           }
         }
