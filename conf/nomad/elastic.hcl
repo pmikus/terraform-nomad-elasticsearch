@@ -80,7 +80,7 @@ job "${job_name}" {
   #
   #     https://www.nomadproject.io/docs/job-specification/group
   #
-  group "${cluster_service_name}" {
+  group "${search_service_name}" {
     # The "count" parameter specifies the number of the task groups that should
     # be running under this group. This value must be non-negative and defaults
     # to 1.
@@ -95,7 +95,7 @@ job "${job_name}" {
     #     https://www.nomadproject.io/docs/job-specification/volume
     #
     %{ if use_host_volume }
-    volume "${cluster_service_name}" {
+    volume "${search_service_name}" {
       type              = "host"
       read_only         = false
       source            = "${host_volume}"
@@ -110,14 +110,14 @@ job "${job_name}" {
     #
     #     https://www.nomadproject.io/docs/job-specification/task
     #
-    task "${cluster_service_name}" {
+    task "${search_service_name}" {
       # The "driver" parameter specifies the task driver that should be used to
       # run the task.
       driver          = "docker"
 
       %{ if use_host_volume }
       volume_mount {
-        volume          = "${cluster_service_name}"
+        volume          = "${search_service_name}"
         destination     = "${data_dir}"
         read_only       = false
       }
@@ -137,13 +137,13 @@ job "${job_name}" {
       # are specific to each driver, so please see specific driver
       # documentation for more information.
       config {
-        image         = "${cluster_image}"
+        image         = "${search_image}"
         dns_servers   = [ "$${attr.unique.network.ip-address}" ]
         command       = "elasticsearch"
         args          = [
-          "-Enode.name=${cluster_service_name}$${NOMAD_ALLOC_INDEX}",
+          "-Enode.name=${search_service_name}$${NOMAD_ALLOC_INDEX}",
           "-Enetwork.host=0.0.0.0",
-          "-Ecluster.name=${cluster_service_name}",
+          "-Ecluster.name=${search_service_name}",
           "-Ehttp.port=$${NOMAD_PORT_rest}",
           "-Ehttp.publish_port=$${NOMAD_HOST_PORT_rest}",
           "-Ebootstrap.memory_lock=false",
@@ -154,18 +154,18 @@ job "${job_name}" {
           "-Expack.license.self_generated.type=basic",
           "-Expack.security.enabled=true",
           "-Expack.security.http.ssl.enabled=true",
-          "-Expack.security.http.ssl.key=certs/${cluster_service_name}$${NOMAD_ALLOC_INDEX}.key",
-          "-Expack.security.http.ssl.certificate=certs/${cluster_service_name}$${NOMAD_ALLOC_INDEX}.crt",
+          "-Expack.security.http.ssl.key=certs/${search_service_name}$${NOMAD_ALLOC_INDEX}.key",
+          "-Expack.security.http.ssl.certificate=certs/${search_service_name}$${NOMAD_ALLOC_INDEX}.crt",
           "-Expack.security.http.ssl.certificate_authorities=certs/ca.crt",
           "-Expack.security.transport.ssl.enabled=true",
-          "-Expack.security.transport.ssl.key=certs/${cluster_service_name}$${NOMAD_ALLOC_INDEX}.key",
-          "-Expack.security.transport.ssl.certificate=certs/${cluster_service_name}$${NOMAD_ALLOC_INDEX}.crt",
+          "-Expack.security.transport.ssl.key=certs/${search_service_name}$${NOMAD_ALLOC_INDEX}.key",
+          "-Expack.security.transport.ssl.certificate=certs/${search_service_name}$${NOMAD_ALLOC_INDEX}.crt",
           "-Expack.security.transport.ssl.certificate_authorities=certs/ca.crt",
           "-Expack.security.transport.ssl.verification_mode=certificate"
         ]
         volumes       = [
-          "secrets/${cluster_service_name}$${NOMAD_ALLOC_INDEX}.crt:/usr/share/elasticsearch/config/certs/${cluster_service_name}$${NOMAD_ALLOC_INDEX}.crt",
-          "secrets/${cluster_service_name}$${NOMAD_ALLOC_INDEX}.key:/usr/share/elasticsearch/config/certs/${cluster_service_name}$${NOMAD_ALLOC_INDEX}.key",
+          "secrets/${search_service_name}$${NOMAD_ALLOC_INDEX}.crt:/usr/share/elasticsearch/config/certs/${search_service_name}$${NOMAD_ALLOC_INDEX}.crt",
+          "secrets/${search_service_name}$${NOMAD_ALLOC_INDEX}.key:/usr/share/elasticsearch/config/certs/${search_service_name}$${NOMAD_ALLOC_INDEX}.key",
           "secrets/ca.crt:/usr/share/elasticsearch/config/certs/ca.crt",
           "secrets/ca.key:/usr/share/elasticsearch/config/certs/ca.key",
           "secrets/instances.yml:/usr/share/elasticsearch/config/instances.yaml",
@@ -247,7 +247,7 @@ riSs0AsAokMsF+hLv5d1kAH535uHs7Mr85gw7Y7/qlXmJovh4oWcys8XTPvlHhkQ
 98I9yFJ7HRAUgbah
 -----END CERTIFICATE-----
 EOF
-        destination  = "secrets/${cluster_service_name}$${NOMAD_ALLOC_INDEX}.crt"
+        destination  = "secrets/${search_service_name}$${NOMAD_ALLOC_INDEX}.crt"
       }
 
       template {
@@ -282,7 +282,7 @@ KujDXHJtkUCBluXOhfsQcjAr2UzvxpGdvDd5Ym5HA6l/2qAtph+f8DUofESSz7vh
 T9/4PLw82sIU9/wFM40F1IV20W1TgUnJZln4HdpWPpwmXottoOX3y2s=
 -----END RSA PRIVATE KEY-----
 EOF
-        destination  = "secrets/${cluster_service_name}$${NOMAD_ALLOC_INDEX}.key"
+        destination  = "secrets/${search_service_name}$${NOMAD_ALLOC_INDEX}.key"
       }
 
       template {
@@ -353,9 +353,9 @@ EOF
       #     https://www.nomadproject.io/docs/job-specification/service
       #
       service {
-        name              = "${cluster_service_name}"
+        name              = "${search_service_name}"
         port              = "rest"
-        tags              = [ "${cluster_service_name}$${NOMAD_ALLOC_INDEX}" ]
+        tags              = [ "${search_service_name}$${NOMAD_ALLOC_INDEX}" ]
         check {
           name            = "Elastic Cluster REST Check Live"
           port            = "rest"
@@ -378,9 +378,9 @@ EOF
         }
       }
       service {
-        name              = "${cluster_service_name}-transport"
+        name              = "${search_service_name}-transport"
         port              = "transport"
-        tags              = [ "${cluster_service_name}-transport$${NOMAD_ALLOC_INDEX}" ]
+        tags              = [ "${search_service_name}-transport$${NOMAD_ALLOC_INDEX}" ]
         check {
           name            = "Elastic Cluster Transport Check Live"
           type            = "tcp"
@@ -401,8 +401,8 @@ EOF
       #     https://www.nomadproject.io/docs/job-specification/resources
       #
       resources {
-        cpu        = ${cluster_cpu}
-        memory     = ${cluster_memory}
+        cpu        = ${search_cpu}
+        memory     = ${search_memory}
         # The network stanza specifies the networking requirements for the task
         # group, including the network mode and port allocations. When scheduling
         # jobs in Nomad they are provisioned across your fleet of machines along
@@ -417,10 +417,10 @@ EOF
         #
         network {
           port "rest" {
-            static = ${cluster_rest_port}
+            static = ${search_rest_port}
           }
           port "transport" {
-            static = ${cluster_transport_port}
+            static = ${search_transport_port}
           }
         }
       }
@@ -473,9 +473,9 @@ EOF
           "--server.ssl.enabled=true",
           "--server.ssl.certificate=/etc/kibana/config/certs/${kibana_service_name}.crt",
           "--server.ssl.key=/etc/kibana/config/certs/${kibana_service_name}.key",
-          "--elasticsearch.hosts=https://${cluster_service_name}0.elastic.service.consul:9200",
+          "--elasticsearch.hosts=https://${search_service_name}0.elastic.service.consul:9200",
           "--elasticsearch.username=elasticuser",
-          "--elasticsearch.password=${cluster_password}",
+          "--elasticsearch.password=${search_password}",
           "--elasticsearch.ssl.certificateAuthorities=/etc/kibana/config/certs/ca.crt",
           "--xpack.apm.ui.enabled=false",
           "--xpack.graph.enabled=false",

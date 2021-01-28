@@ -13,25 +13,25 @@ variable "nomad_host_volume" {
 
 # Elastic
 variable "elastic_job_name" {
-  description = "Elastic job name"
+  description = "Job name"
   type        = string
   default     = "elastic"
 }
 
 variable "elastic_group_count" {
-  description = "Number of elastic group instances"
+  description = "Number of group instances"
   type        = number
   default     = 1
 }
 
 variable "elastic_use_canary" {
-  description = "Uses canary deployment for elastic"
+  description = "Uses canary deployment for"
   type        = bool
   default     = false
 }
 
 variable "elastic_data_dir" {
-  description = "Elastic DISK allocation"
+  description = "DISK allocation"
   type        = string
   default     = "/data"
 }
@@ -42,75 +42,86 @@ variable "elastic_use_host_volume" {
   default     = false
 }
 
-variable "elastic_cluster_service_name" {
-  description = "Elastic cluster service name"
+variable "elastic_vault_secret" {
+  description = "Set of properties to be able to fetch secret from vault"
+  type        = object({
+    use_vault_provider        = bool,
+    vault_kv_policy_name      = string,
+    vault_kv_path             = string,
+    vault_kv_field_access_key = string,
+    vault_kv_field_secret_key = string
+  })
+}
+
+variable "elastic_search_service_name" {
+  description = "Service name"
   type        = string
   default     = "elastic"
 }
 
-variable "elastic_cluster_password" {
-  description = "Elastic cluster password"
+variable "elastic_search_password" {
+  description = "Password"
   type        = string
   default     = "Elastic1234"
 }
 
-variable "elastic_cluster_image" {
-  description = "Elastic cluster Docker image"
+variable "elastic_search_image" {
+  description = "Docker image"
   type        = string
   default     = "docker.elastic.co/elasticsearch/elasticsearch:7.10.1"
 }
 
-variable "elastic_cluster_cpu" {
-  description = "Elastic cluster group CPU"
+variable "elastic_search_cpu" {
+  description = "CPU allocation"
   type        = number
   default     = 40000
 }
 
-variable "elastic_cluster_memory" {
-  description = "Elastic cluster group memory"
+variable "elastic_search_memory" {
+  description = "MEM allocation"
   type        = number
   default     = 40000
 }
 
-variable "elastic_cluster_rest_port" {
-  description = "Elastic cluster REST port"
+variable "elastic_search_rest_port" {
+  description = "REST port allocation"
   type        = number
   default     = 9200
 }
 
-variable "elastic_cluster_transport_port" {
-  description = "Elastic cluster Transport port"
+variable "elastic_search_transport_port" {
+  description = "Transport port allocation"
   type        = number
   default     = 9300
 }
 
 # Kibana
 variable "elastic_kibana_service_name" {
-  description = "Elastic Kibana service name"
+  description = "Service name"
   type        = string
   default     = "kibana"
 }
 
-variable "elastic_cluster_image" {
-  description = "Elastic Kibana Docker image"
+variable "elastic_kibana_image" {
+  description = "Docker image"
   type        = string
   default     = "docker.elastic.co/kibana/kibana:7.10.1"
 }
 
 variable "elastic_kibana_cpu" {
-  description = "Elastic Kibana group CPU"
+  description = "CPU allocation"
   type        = number
   default     = 1000
 }
 
 variable "elastic_kibana_memory" {
-  description = "Elastic Kibana group memory"
+  description = "MEM allocation"
   type        = number
   default     = 8192
 }
 
 variable "elastic_kibana_port" {
-  description = "Elastic Kibana HTTP port"
+  description = "HTTP port allocation"
   type        = number
   default     = 5601
 }
