@@ -1,5 +1,5 @@
 ## Content
-1. [Terraform-nomad-elasticksearch](#terraform-nomad-elasticksearch)
+1. [Terraform-nomad-elasticsearch](#terraform-nomad-elasticsearch)
 2. [Compatibility](#compatibility)
 3. [Requirements](#requirements)
     1. [Required modules](#required-modules)
@@ -12,9 +12,9 @@
 7. [Volumes](#volumes)
 8. [Licence](#license)
 
-# Terraform-nomad-elasticksearch
+# Terraform-nomad-elasticsearch
 
-Terraform-nomad-elasticksearch module is IaC - infrastructure as code. Module contains a nomad job with [Elasticsearch](https://elastic.co).
+Terraform-nomad-elasticsearch module is IaC - infrastructure as code. Module contains a nomad job with [Elasticsearch](https://elastic.co).
 - [consul](https://www.consul.io/docs/)
 - [docker driver](https://www.nomadproject.io/docs/drivers/docker.html)
 
@@ -42,7 +42,7 @@ terraform plan
 terraform apply
 ```
 ### Verifying setup
-You can verify that Elastic ran successful by checking the Elastic Kibana UI [localhost:3000/](http://localhost:3000/).
+You can verify that Elastic ran successful by checking the Elastic Kibana UI [<host>:3000/](http://<host>:3000/).
 
 ### Providers
 - [Nomad](https://registry.terraform.io/providers/hashicorp/nomad/latest/docs)
@@ -65,12 +65,12 @@ module "elastic" {
   port                            = 9200
   version                         = "7.10.1"
   vault_secret                    = {
-                                      use_vault_provider        = true,
-                                      vault_kv_policy_name      = "kv-secret",
-                                      vault_kv_path             = "secret/data/elastic",
-                                      vault_kv_field_access_key = "access_key",
-                                      vault_kv_field_secret_key = "secret_key"
-                                    }
+    use_vault_provider        = true,
+    vault_kv_policy_name      = "kv-secret",
+    vault_kv_path             = "secret/data/elastic",
+    vault_kv_field_access_key = "access_key",
+    vault_kv_field_secret_key = "secret_key"
+  }
   use_host_volume                 = true
   use_canary                      = true 
 }
@@ -80,4 +80,4 @@ module "elastic" {
 Module is using [host volume](https://www.nomadproject.io/docs/job-specification/volume) to store Elastic data.
 
 ## License
-This work licensed under MIT License. See [LICENSE](./LICENSE) for full details.
+This work licensed under Apache 2 License. See [LICENSE](./LICENSE) for full details.
